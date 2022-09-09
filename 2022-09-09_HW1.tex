@@ -139,6 +139,62 @@ Hence, $c(z)$, the constant has to be 1 which implies
 \end{proof}
 
 \section{Excerise 3.20} 
+\paragraph{(a)}
+For joint distribution without factorization on conditional independence, a look-up table is the
+best approach to represent the joint distribution. In our binary random variable case with
+$C$ classes and $D$ features, the look-up table has the size of $[C \times (2^D - 1)]$ or $O(C2^D)$.
 
+\paragraph{(b)}
+The Naive Bayes should perform better if we do not have much data.
+
+\paragraph{(c)}
+If we have infinite sample data, the full-distribution model should perform better.
+
+\paragraph{(d)}
+Both versions should have $O(ND)$. It needs at least one sweep of all available elements in the data set.
+
+\paragraph{(e)}
+Complexity on a single test sample takes $O(CD)$ for Naive Bayes. It needs to go through all the features
+for each class. Full Bayes takes $O(C)$; it only performs look-up for all classes.
+
+\paragraph{(f)}
+Missing feature data in the test set should not affect the performance in Naive Bayes because features are
+conditionally independent of each other given a class. Hence $O(C \cdot (v+h))$.
+
+On the other hand, Full Bayes needs to impute the average for these missing averages which takes
+exponential time during a sweep of the look-up table. Hence $O(v \cdot 2^h)$.
+
+\section{Excerise 3.22}
+
+\begin{center}
+\begin{tabular}{l|lllllll}
+\multicolumn{1}{c|}{Label}  & \multicolumn{1}{c}{Spam} & \multicolumn{1}{c}{Spam} & \multicolumn{1}{c}{Spam} & Ham & Ham & Ham & Ham \\ \hline
+\multicolumn{1}{c|}{secret} & \multicolumn{1}{c}{}     & \multicolumn{1}{c}{1}    & \multicolumn{1}{c}{1}    &     & 1   &     &     \\
+\multicolumn{1}{c|}{offer} & \multicolumn{1}{c}{1} & \multicolumn{1}{c}{1} & \multicolumn{1}{c}{} &   &   &   &   \\
+\multicolumn{1}{c|}{low}   & \multicolumn{1}{c}{}  & \multicolumn{1}{c}{}  & \multicolumn{1}{c}{} & 1 &   &   & 1 \\
+\multicolumn{1}{c|}{price} & \multicolumn{1}{c}{}  & \multicolumn{1}{c}{}  & \multicolumn{1}{c}{} & 1 &   &   & 1 \\
+valued                     &                       &                       &                      & 1 &   &   &   \\
+customer                   &                       &                       &                      & 1 &   &   &   \\
+today                      &                       & 1                     &                      &   & 1 &   &   \\
+dollar                     & 1                     &                       &                      &   &   &   &   \\
+million                    & 1                     &                       &                      &   &   &   &   \\
+sports                     &                       &                       &                      &   & 1 & 1 &   \\
+is                         &                       &                       & 1                    &   &   & 1 &   \\
+for                        &                       &                       &                      & 1 &   &   &   \\
+play                       &                       &                       &                      &   & 1 &   &   \\
+healthy                    &                       &                       &                      &   &   & 1 &   \\
+pizza                      &                       &                       &                      &   &   &   & 1
+\end{tabular}
+\end{center}
+
+\[ \theta_{spam} = \frac{3}{7} \]
+\[ \theta_{secret|spam} = \frac{2}{3}, \theta_{dollar|spam} = \frac{1}{3} \]
+\[ \theta_{secret|ham} = \frac{1}{4}, \theta_{sports|ham} = \frac{1}{2} \]
+
+\section{Excerise 4.21}
+
+\section{Excerise 4.22}
+
+\section{Excerise 4.23}
 
 \end{document}
