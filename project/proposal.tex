@@ -1,0 +1,32 @@
+\documentclass[11pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[letterpaper, margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage[font=scriptsize]{caption}
+\usepackage{subcaption}
+\usepackage[backend=biber, style=alphabetic, sorting=ynt]{biblatex}
+
+\addbibresource{bibliography.bib}
+\graphicspath{ {.} }
+\captionsetup{justification=raggedright, singlelinecheck=false}
+
+
+\title{Project Proposal}
+\author{Ryan Tang}
+\date{November 2nd 2022}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    The electricity market is a peculiar one among all commodities. It is economically non-storable. The power system requires a constant balance between production and consumption. The spot price varies wildly due to temperature, wind speed, sun exposure, and various business and residential activities that exhibit long-term and short-term seasonal patterns. Nevertheless, the world cannot run without electricity. After the deregulation in the 1990s, the introduction of competitive electricity markets reshaped the traditional monopolistic, government-controlled sector. With the wide participation range from public and private generators and distributors to many individual trading firms, the activities have been driving energy prices lower simultaneously, ensuring a stable electricity market. However, forecasting the future electricity price is not a simple endeavor. Utility generators need to do the forecast to plan the production the next day or even the next few years. Distributors need an accurate forecast to satisfy all retail demand in real time with the lowest price possible. And trading firms need an accurate predictions for their arbitrage strategies. Here we like to formulate the problem as a time series forecasting under certainty. By utilizing Bayesian and probabilistic-oriented methodology, we want to apply Hidden Markov Model (HMM) or Linear-Gaussian State Space Model (LF-SSM) to the forecasting problem and compare the empirical results with previous research \cite{Nowotarski}.
+
+\end{abstract}
+
+\printbibliography[heading=bibintoc, title={References}]
+
+
+\end{document}
