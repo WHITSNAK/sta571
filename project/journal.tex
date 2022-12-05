@@ -151,12 +151,23 @@ The test results, out of sample predictions, are shown in Table \ref{tab:test_re
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.5\textwidth]{5.a.png}
-\caption{}
-\label{fig:HMM_graph}
+\caption{Chart shows the CRPS hourly comparison of all three models}
+\label{fig:CRPS_comp}
 \end{figure}
 
+To dig in deeper about why ARX-HMM performs better, here we plot the hourly CRPS scores instead of the grand average in Figure \ref{fig:CRPS_comp}, which sheds some light on the modeling differences. We can see ARX-HMM performs exceptionally well during the early, mid-day, and late night hours, 100\%+ better, but underperforms during the morning rush hours, 6 Am to 10 AM. One reason for this artifact might be because morning rush hours have an inherently different process, and the current 2 hidden state assumption is not enough to capture it. Or, we might not have the relevant features, so ARX-HMM is being extra cautious around that region with higher CRPS scores. However, the performance of ARX-HMM has been surprisingly well.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{5.b.png}
+\caption{Chart shows the CRPS hourly comparison of all three models}
+\label{fig:CRPS_comp}
+\end{figure}
+
+Lastly, we can gain more insight directly from the posterior distributions' diagnostic and individual KDE plots.
 
 \section{Conclusions}
+
 
 \printbibliography[heading=bibintoc, title={References}]
 
