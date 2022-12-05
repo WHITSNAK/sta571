@@ -16,6 +16,7 @@
 \usepackage{subfig}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[backend=biber, sorting=ynt]{biblatex}
+\usepackage{hyperref}
 
 \addbibresource{bibliography.bib}
 \graphicspath{ {./statics/} }
@@ -60,14 +61,14 @@ We introduce two classic benchmarks for comparison purposes, which we will brief
 We called this the naive model because it simply uses the last day or week's hourly price for the current estimates based on the day of the week. Namely, $$\hat{P}_{d,h} = P_{d-1, h}$$ on Tuesday, Wednesday, Thursday or Friday, and $$\hat{P}_{d,h} = P_{d-7, h}$$ on Monday, Saturday, or Sunday. We used the conventional electricity price notation here that $P_{d,h}$ stands for the electricity price at day $d$ hour $h$; hence $P_{d-1, h}$ is the $h$-th hourly price from yesterday. Obviously, there is no training or parameter to tune except that we need a week's data for initial calibration.
 
 \subsection{Autoregressive Model (ARX)}
-Another popular model that are adopted widely in the community uses an autoregressive (AR) model with extra factors (ARX), X stands for exogenous variables. Simply put, it is a linear regression on AR. Misiorek et al. introduced it originally, and the model uses a centered log-price $p_{d,h}$, few autoregressive lag terms, log zonal load $z_{d,h}$, and day of week effects $D_{day}$ which follow the following equation:
+Another popular model that is adopted widely in the community uses an autoregressive (AR) model with extra factors (ARX), X stands for exogenous variables. Simply put, it is a linear regression on AR. Misiorek et al. introduced it originally, and the model uses a centered log-price $p_{d,h}$, few autoregressive lag terms, log zonal load $z_{d,h}$, and day of week effects $D_{day}$ which follow the following equation:
 \begin{align*}
     p_{d,h} &= \log(P_{d,h}) - \frac{1}{T}\sum_{t=1}^{T} \log(P_{t, h}) \\
     \hat{p}_{d,h} &= \beta_h^{\intercal} x_{d,h} \\
     x_{d, h} &= (p_{d-1,h}, p_{d-2,h}, p_{d-7,h}, p_{d-1}^{min}, \\
              &\quad \,\,\, z_{d,h}, D_{sat}, D_{sun}, D_{mon})^{\intercal}
 \end{align*}
-Here $T$ is the model calibration, or training, period which was chosen as 365 days. The day of week effects were handled using one-hot-encoding in our case for only Monday, Sunday, and Saturday.
+Here $T$ is the model calibration, or training, period which was chosen as 365 days. In our case, the day-of-week effects were handled using one-hot-encoding for only Monday, Sunday, and Saturday.
 
 \subsection{Prediction Interval {PI} Construction}
 The interval bounds are usually determined simply using historical residual analysis. Hence, the prediction interval, $[\hat{L}_t, \hat{U}_t]$, lower and upper bounds are estimated directly using the observed prediction errors $\epsilon_t$ with the respective quantile in the training sets. 
@@ -83,7 +84,7 @@ where $\hat{F}^{-1}_{\epsilon, t}(\cdot)$ is the inverse CDF function of the emp
 We are spitting out full probability distribution rather than a point estimate. However, the realization is a scalar. We need a specific way of assessing the performance of the probabilistic prediction in this context. The goal is to maximize sharpness while maintaining calibration. Calibration is crucial because we like to ensure the outputted distribution reflects the true, observed density. It is often time called unbiasedness. On the other hand, sharpness concerns the prediction variances, often called precision; the tighter the distribution, the better. Below, we introduce two widely used metrics for performance evaluations that will be used in our performance evaluations.
 
 \subsection{Unconditional coverage (UC)}
-The intuition behind this metric is that the ideal empirical coverage of the quantile should resemble to the nominal quantile coverage. Here, we first introduce the hits and misses indicator $\mathbf{1}_t$ for every prediction at time $t$. Then, the unconditional coverage of our series of probabilistic prediction, UC, is defined as below.
+The intuition behind this metric is that the ideal empirical coverage of the quantile should resemble the nominal quantile coverage. Here, we first introduce the hits and misses indicator $\mathbf{1}_t$ for every prediction at time $t$. Then, the unconditional coverage of our series of probabilistic predictions, UC, is defined as below.
 \begin{align*}
     \mathbf{1}_t &= \begin{cases}
         1 & \text{if $\hat{P}_t \in [\hat{L}_t, \hat{U}_t]$} \\
@@ -93,7 +94,7 @@ The intuition behind this metric is that the ideal empirical coverage of the qua
 \end{align*}
 
 \subsection{Continuous Ranked Probability Score (CRPS)}
-In a nutshell, CRPS measures how closer a predicted distribution to a delta function that centers at the observed instance; the smaller the value the better and is defined as $$CRPS(\hat{F}_{P_t}, P_t) = \int_{-\infty}^{\infty} (\hat{F}_{P_t} - \mathbf{1}_{\{P_t \leq x\}})^2 dx$$ However, the integral is hard to estimate. Often, we have to rely on approximation. One useful way is to use a series Pinball loss at different quantile ranging from 1\% to 99\% then average them up to arrive on the approximation. Pinball loss is an asymmetric linear loss version of L1-loss. Instead of calculating the loss at the median, 50-th quantile, it does on any arbitrary point. Hence, it is often called the quantile loss.
+In a nutshell, CRPS measures how closely a predicted distribution is to a delta function that centers at the observed instance; the smaller the value, the better, and is defined as $$CRPS(\hat{F}_{P_t}, P_t) = \int_{-\infty}^{\infty} (\hat{F}_{P_t} - \mathbf{1}_{\{P_t \leq x\}})^2 dx$$ However, the integral is hard to estimate. Often, we have to rely on approximation. One useful way is to use a series of Pinball losses at different quantiles ranging from 1\% to 99\%, then average them up to arrive at the approximation. Pinball loss is an asymmetric linear loss version of L1-loss. Instead of calculating the loss at the median, 50-th quantile, it does on any arbitrary point. Hence, it is often called quantile loss.
 \begin{align*}
     Pinball&(\hat{Q}_{P_t}(q), P_t, q) \\&= \begin{cases}
         (1-q) |\hat{Q}_{P_t}(q) - P_t| & \text{if $P_t < \hat{Q}_{P_t}(q)$} \\
@@ -104,24 +105,56 @@ In a nutshell, CRPS measures how closer a predicted distribution to a delta func
 $\hat{Q}_{P_t}(q)$ is the price forecast at the q-th quantile and $P_t$ is the observed price. We can see when $q=0.5$, the Pinball loss reduces to the L1-loss.
 
 
-\section{Problem Formulation}
-In this section, we define the exact formulation of the proposed HMM model. Rather than relying on the historical simulation method for constructing the prediction interval, we uses a forward sampling directly through the posterior predictive distribution using Markov Chain Monte Carlo (MCMC) which comes naturally through our graphical model and is one of the biggest advantage on using Bayesian method to quantify uncertainty directly in terms of posterior. Like all HMM, the model consists of a discrete hidden state denoted $Z_t \in \{0, 1\}$, a conditional observation model, $p(y_t|Z=z_k, x_t)$, and a transition matrix $A$. Here we assumes time invariant $A$, but parameterized the observation model using Gaussian distribution with $\theta_k=(\beta_k, \sigma_k^2)$ conditionally independent of each hidden state $k$. Lastly, we placed priors on top all of them for Bayesian methods. Mathematically, the following is the model specs.
+\section{Problem Formulation (ARX-HMM)}
+In this section, we define the exact formulation of the proposed HMM model. Rather than relying on the historical simulation method for constructing the prediction interval, we use a forward sampling directly through the posterior predictive distribution using Markov Chain Monte Carlo (MCMC), which comes naturally through our graphical model and is one of the biggest advantages on using Bayesian method to quantify uncertainty directly in terms of posterior. Like all, HMM, the model consists of a discrete hidden state denoted $Z_t \in \{0, 1\}$, a conditional observation model, $p(y_t|Z=z_k, x_t)$, and a transition matrix $A$. Here we assume time-invariant $A$ but parameterized the observation model using Gaussian distribution with $\theta_k=(\beta_k, \sigma_k^2)$ conditionally independent of each hidden state $k$. Lastly, we placed priors on top of all of them for Bayesian methods. Mathematically, the following are the model specs. Figure \ref{fig:HMM_graph} has the formulation in a neatly hand-drawn graphical model diagram.
 \begin{align*}
     p(z_0) &= p(\pi) \\
     p(z_t|z_{t-1}) &= A_{ji} \\
     p(y_t|x_i, Z_t=z_k) &= \mathcal{N}(y_t|x_i^{\intercal}\beta_k, \sigma^2_k) \\
-    A_{j\cdot} &\thicksim Dir({\alpha_1, ..., \alpha_k}) \\
+    A_{j\cdot} &\thicksim Dir(\{\alpha_1, ..., \alpha_k\}=\mathbf{1}_k) \\
     \beta_k &\thicksim \mathcal{N}(\mu_{ko}=0, \sigma^2_{ko}=100) \\
     1/\sigma^2_{k} &\thicksim Gamma(1, 20)
 \end{align*}
-Note, we decided to only assume two hidden states. One because it already captures the spiky phenomenal quite well, we have limited amount of data, and too many hidden states quickly exacerbate the sampling speed. Hence, the transition matrix is $A \in \mathbf{R}^{2\times 2}$ and we model the each row with its Dirichlet prior. For the design matrix, we decided to use the same features from the ARX model which contains 8 expert selected features, $\beta_k \in \mathbf{R}^8$. And, follows the typical full-conditional of a Bayesian linear regression model, we pick the normal prior for $\beta_k$ and gamma prior for the precision $1/\sigma^2_k$. Lastly, we fit the model individually for each hourly time series, but we can still compactly write it still using a multivariate-normal with a diagonalized covariance matrix $\sigma^2\mathbf{I}_k$. Therefore, the resulting model consists one for each hour, in total contains 528 parameters, 22 per hour.
+Note we decided to only assume two hidden states. One because it already captures the spiky phenomenon quite well, we have a limited amount of data, and too many hidden states quickly exacerbate the sampling speed. Hence, the transition matrix is $A \in \mathbf{R}^{2\times 2}$, and we model each row with its Dirichlet prior. We decided to use the same features from the ARX model for the design matrix, which contains 8 expert-selected features, $\beta_k \in \mathbf{R}^8$. And, following the typical full-conditional of a Bayesian linear regression model, we pick the normal prior for $\beta_k$ and gamma prior for the precision $1/\sigma^2_k$. We fit the model individually for each hourly time series, but we can still compactly write it still using a multivariate-normal with a diagonalized covariance matrix $\sigma^2\mathbf{I}_k$. Therefore, the resulting model consists of one for each hour, containing 528 parameters, 22 per hour. $\beta_k, \sigma^2_k, A$ are time-invariant and are the point of interest in posterior analysis.
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.35\textwidth]{4.a.png}
+\caption{The HMM graphical model with Gaussian regression observation parameterizations. The nodes with two square boxes pointed to are the ones with priors or hyper-priors. The nodes with two squares are observed in the data.}
+\label{fig:HMM_graph}
+\end{figure}
 
-$p(y|Z=z_k, x) \thicksim N(\mu$  The Baum-Welch algorithm, specially, the forward filtering backward sampling algorithm is used in MCMC sampling because we don't 
+The model has no no-close-form solution, even if we used the normal conjugates. We have to rely on the Baum-Welch algorithm, especially the forward filtering backward sampling (FFBS) algorithm in MCMC, to sample the hidden state sequence, $Z^{(s)}_{1:T}$, first then utilize No-U-Term Hamiltonian Sampler (NUTS) for the rest of parameters at each sequential step. However, we group the learning and inference tasks by specifying all the parameters through Bayesian formulation. It helps alleviate over-fitting with Bayesian shrinkage and provides robust uncertainty estimation. Luckily, PYMC3 \cite{Salvatier} already has a minimal HMM model in place and provides the advanced MCMC samplers out-of-box; all we need to do is adjust it to accommodate Bayesian Linear Regression at each observation step. For the entire implementation of the model in PYMC3, please refer to \href{https://github.com/WHITSNAK/sta571/tree/main/project}{my Github repository}.
 
 
 \section{Results \& Diagnostics}
-Compare the GM-HMM result to the benchmark, AR, and QRA in terms of UC and CRPS.
+\begin{table}
+\begin{center}
+\begin{tabular}{||c | c c||} 
+    \hline
+    Model & UC & CRPS \\ [0.5ex] 
+    \hline\hline
+    ARX-HMM & 0.900* & 2.213 \\
+    \hline
+    ARX & 0.839 & 2.856 \\
+    \hline
+    Naive & 0.879 & 3.02 \\
+    \hline
+\end{tabular}
+\caption{The test results for the 3 models. *ARX-HMM's UC estimation has a larger uncertainty because it is estimated with much fewer samples than the other two models. One major season is because ARX-HMM is much more expansive to run.}
+\label{tab:test_results}
+\end{center}
+\end{table}
+
+The test results, out of sample predictions, are shown in Table \ref{tab:test_results}. We can see ARX-HMM significantly outperforms the two benchmarks. The unconditional coverage is nearly perfect; it is one of the advantages of using Bayesian methods. And CRPS is 22\% less than the classic ARX model and 27\% less than the naive model. Note we used exactly the same features from the ARX model. In other words, ARX-HMM had done a much better job of learning from the same dataset.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{5.a.png}
+\caption{}
+\label{fig:HMM_graph}
+\end{figure}
+
 
 \section{Conclusions}
 
