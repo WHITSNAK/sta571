@@ -15,23 +15,72 @@
 \usepackage{lipsum}
 \usepackage{subfig}
 \usepackage[dvipsnames]{xcolor}
+\usepackage[backend=biber, sorting=ynt]{biblatex}
 
 \addbibresource{bibliography.bib}
-\graphicspath{ {.} }
+\graphicspath{ {./statics/} }
 \captionsetup{justification=raggedright, singlelinecheck=false}
 
-
-\title{Project Proposal}
-\author{Ryan Tang}
-\date{November 2nd 2022}
+\title{Project: Electricity Day-Ahead Price Forecasting}
+\author[1]{Ryan Tang}
+\affil[1]{Duke University, Statistical Science}
+\date{December 5th 2022}
 
 \begin{document}
 \maketitle
 
-\begin{abstract}
-    The electricity market is a peculiar one among all commodities. It is economically non-storable. The power system requires a constant balance between production and consumption. The spot price varies wildly due to temperature, wind speed, sun exposure, and various business and residential activities that exhibit long-term and short-term seasonal patterns. Nevertheless, the world cannot run without electricity. After the deregulation in the 1990s, the introduction of competitive electricity markets reshaped the traditional monopolistic, government-controlled sector. With the wide participation range from public and private generators and distributors to many individual trading firms, the activities have been driving energy prices lower simultaneously, ensuring a stable electricity market. However, forecasting the future electricity price is not a simple endeavor. Utility generators need to do the forecast to plan the production the next day or even the next few years. Distributors need an accurate forecast to satisfy all retail demand in real-time with the lowest price possible. And trading firms need accurate predictions for their arbitrage strategies. Here we like to formulate the problem as a time series forecasting under certainty. By utilizing Bayesian and probabilistic-oriented methodology, we want to apply Hidden Markov Model (HMM) or Linear-Gaussian State Space Model (LF-SSM) to the forecasting problem and compare the empirical results with previous research \cite{Nowotarski}.
+\section{Introduction}
+The electricity market is a peculiar one among all commodities. It is economically non-storable. The power system requires a constant balance between production and consumption. The spot price varies wildly due to temperature, wind speed, sun exposure, and various business and residential activities that exhibit long-term and short-term seasonal patterns. Nevertheless, the world cannot run without electricity. After the deregulation in the 1990s, the introduction of competitive electricity markets reshaped the traditional monopolistic, government-controlled sector. With the wide participation range from public and private generators and distributors to many individual trading firms, the activities have been driving energy prices lower simultaneously, ensuring a stable electricity market. However, forecasting the future electricity price is not a simple endeavor. Utility generators need to do the forecast to plan the production the next day or even the next few years. Distributors need an accurate forecast to satisfy all retail demand in real-time with the lowest price possible. And trading firms need accurate predictions for their arbitrage strategies to drive profitability. Hence, the demand for accurate forecasts is paramount. 
 
-\end{abstract}
+There are two types of forward markets, long-term, and day-ahead. Companies use the long-term markets to plan generation and consumption and hedge risks one to three years ahead. And most of the immediate planning is done in the day-ahead market for the preceding day's retail demand. If there are any differences between the planned load and the realized load, the grid operator often uses the spot market to mark the differences in real-time. The focus of this journal will be the day-ahead market, with its intricacy, where the forecast is delivered one day ahead at once for all 24 hours. In other words, the day-ahead market does not allow continuous trading. Before a specific cutoff time, all bids and offers must be submitted for the next day of each hour. When making the forecast, we have 24 outputs to make.
+
+Hong's team hosted a global energy forecasting competition in 2014 with multiple tracks, GEFCom2014, and open-sourced all the data \cite{HONG2016896}. It has been utilized widely by other researchers as a simple benchmark dataset after that. We, too, will use the same dataset to conduct price forecasting to have a few benchmarks to compare results. The data provided by Hong's team is minimalist, with only 1 price series and 2 co-variate series. The real-world forecasting task is, in fact, much more complex and takes many other factors into account in the modeling process, such as temperatures, generator failures, transmission congestion, and the inter-dependency of the electricity grid network, which were not present in the dataset. Nevertheless, the data is enough for our purpose.
+
+Not all predictions are treated equally. Due to the inherited volatility of electricity prices, point estimates are often insufficient for energy companies' decision-making and planning process because most transactions are conducted with the forward market. Therefore, coming up with probabilistic predictions is crucial for the task. Here we first formulate the problem as a time series forecasting under certainty by utilizing Bayesian analysis and probabilistic modeling, applying Hidden Markov Model (HMM) to the problem, and compare it with a few empirical results presented in Nowotarski's paper \cite{NOWOTARSKI20181548}. In the last section, we perform diagnostics on HMM and propose future improvements.
+
+
+\section{Previous Work}
+Despite its importance, electric price forecasting (EPF) is an underdeveloped and often overlooked research area \cite{NOWOTARSKI20181548}. The publication pace had only started to pick up attention since 2000, the California crisis. And the pace had only started to pick up since 2005. Many publications focus on using neural networks in prediction, some utilize classic time series methodologies, but the majority concentrates on point forecasting. As we highlighted the importance of probabilistic electric price forecasting forecast (PEPF) previously, it is, even more, an undeveloped regime and barely picks up the pace since 2011.
+
+Weron has extensively reviewed various models used in EPF literature and their relative strengths and weaknesses \cite{WERON20141030}. He segmented all modeling approaches into 5 categories, but we think 3 are more appropriate because of their significant overlap. The multi-agent model is the first segment that has its root in game theory. It tries to model market competition, supply and demand, and many other fundamental factors by formulating equilibrium and a strategic game. Such formulation is neat for theoretical pursuit and creating beautiful theorem but lacks a general solution except for some toy examples. And often, such a method relies on fundamental data and only updates weekly, monthly, or even yearly, making them unsuitable for day-ahead prediction. The second major segment consists of many traditional models, including many variants of neural networks, support vector machines, random forests, gradient boosting machines, etc. These model are great point predictor that works well with non-linearity. However, there has not been a thorough investigation of these methods, according to Weron, because it is difficult to establish a benchmark due to the temporal nature of the task. The last segment consists of many statistical and probabilistic models, including the classic time series models, ARX, GARCH, regression, and Markovian models like Jump Diffusion and Markov-Regime Switching. Weron summarized the former tends to perform poorly on sudden spikes, and the latter tends to capture spikes and volatility quite well but lacks forward predictability. We believe the statement is biased because they never considered Bayesian analysis into the context.
+
+For comparison purposes, we introduce two classic benchmarks, which we will brief shortly. Although most of them only offer point estimations by design, many auxiliary techniques can be utilized to construct a prediction interval. One of the most straightforward methods, historical simulation, is introduced in the following section. 
+
+\subsection{Benchmark}
+We called this the naive model, because it simply uses the last day or week hourly price for the current forecast based on the weekdays. Namely, $$\hat{P}_{d,h} = P_{d-1, h}$$ on Tuesday, Wednesday, Thursday or Friday, and $$\hat{P}_{d,h} = P_{d-7, h}$$ on Monday, Saturday, or Sunday. We used the conventional electricity price notation here that $P_{d,h}$ stands for the electricity price at day $d$ hour $h$; hence $P_{d-1, h}$ is the $h$-th hourly price from yesterday. Obviously, there is no training or parameter to tune except that we need a week worth of data for initial calibration.
+
+\subsection{Autoregressive Model}
+The AR model in Nowotarski's paper uses lags and weekday season effects.
+
+\subsection{Prediction Interval {PI} Construction}
+The interval bounds are usually determined simply using historical residual analysis. Hence, the prediction interval, $[\hat{L}_t, \hat{U}_t]$, lower and upper bounds are estimated directly using the observed prediction errors $\epsilon_t$ with the respective quantile in the training sets. 
+\begin{align*}
+    \epsilon_t &= P_t - \hat{P}_t \\
+    \hat{L}_t &= \hat{P}_t + \hat{F}^{-1}_{\epsilon, t}(1-q) \\
+    \hat{U}_t &= \hat{P}_t + \hat{F}^{-1}_{\epsilon, t}(q)
+\end{align*}
+where $\hat{F}^{-1}_{\epsilon, t}(\cdot)$ is the inverse CDF function of the empirical prediction residual at time $t$ and $q$ is the quantile in interest, and $\hat{P}_t$ is the predicted electricity price at time $t$. We used this methodology to construct the PI for all the benchmark models.
+
+
+\section{Evaluation Metrics}
+We are spitting out full probability distribution rather than a point estimate. However, the realization is a scalar. We need a specific way of assessing the performance of the probabilistic prediction in this context. The goal is to maximize sharpness while maintaining calibration. Calibration is crucial because we like to ensure the outputted distribution reflects the true, observed density. It is often time called unbiasedness. On the other hand, sharpness concerns the prediction variances, often is called precision; the tighter the distribution the better. Below, we introduce two widely used metrics for performance evaluations.
+
+\subsection{Unconditional coverage (UC)}
+The intuition behind is metric is the empirical coverage of the quantile compared to the nominal quantile.
+
+\subsection{Continuous Ranked Probability Score (CRPS)}
+Introduce the Pinball loss as an asymmetric L1 loss.
+CRPS is the weighted average of the pinball loss over all quantiles.
+
+
+\section{Problem Formulation}
+In this section, we define the exact formulation of the HMM model that we propose. Rather than relying on historical simulation method on constructing the prediction interval, we decided to do a forward sampling directly through the posterior predictive distribution using Markov Chain Monte Carlo (MCMC). GM-HMM using the Baum-Welch algorithm performs both the filtering and updating steps using conjugate updates. With this, there should be no need for Markov Chain Monte Carlo sampling. State hidden state should be fine. Show the data and hourly price density to ascertain the claim. Derive the analytical solution of the algorithm.
+
+
+\section{Results \& Diagnostics}
+Compare the GM-HMM result to the benchmark, AR, and QRA in terms of UC and CRPS.
+
+\section{Conclusions}
 
 \printbibliography[heading=bibintoc, title={References}]
 
